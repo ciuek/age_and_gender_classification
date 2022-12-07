@@ -1,5 +1,6 @@
 package com.example.age_and_gender_classification
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.*
 import android.media.Image
@@ -20,6 +21,7 @@ import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
+
 class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
 
     private lateinit var binding: ActivityMainBinding
@@ -34,6 +36,7 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
 
         outputDirectory = getOutputDirectory()
         cameraExecutor = Executors.newSingleThreadExecutor()
+        val intent = Intent(this, PreviewActivity::class.java)
 
 
         if(allPermissionGranted()) {
@@ -234,7 +237,10 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
                             if(y + width > bitmap_img.height) bitmap_img.height - x else height
                         )
 
-                        croppedIv.setImageBitmap
+                        intent.putExtra("bitmap", crop)
+
+                        startActivity(intent)
+
 
 
                     }
