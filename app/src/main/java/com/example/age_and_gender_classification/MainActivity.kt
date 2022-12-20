@@ -2,6 +2,7 @@ package com.example.age_and_gender_classification
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.AssetManager
 import android.graphics.*
 import android.media.Image
 import android.os.Bundle
@@ -18,8 +19,13 @@ import com.google.mlkit.vision.face.FaceDetection.getClient
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.coroutines.jvm.internal.CompletedContinuation.context
 
 
 class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
@@ -34,9 +40,7 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        outputDirectory = getOutputDirectory()
         cameraExecutor = Executors.newSingleThreadExecutor()
-        val intent = Intent(this, PreviewActivity::class.java)
 
 
         if(allPermissionGranted()) {
@@ -51,48 +55,22 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
         binding.take.setOnClickListener {
             takePhoto()
         }
+        binding.choose.setOnClickListener {
+            choosephoto()
+        }
     }
 
-    private fun getOutputDirectory():File{
-        val mediaDir = externalMediaDirs.firstOrNull()?.let { mFile->
-            File(mFile, resources.getString(R.string.app_name)).apply {
-                mkdirs()
-            }
+    private fun choosephoto() {
+        val image: InputImage
+        try {
+         //   image = InputImage.fromFilePath(context, uri)
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
-        return if(mediaDir != null && mediaDir.exists())
-            mediaDir else filesDir
     }
 
     private fun takePhoto(){
         val imageCapture = imageCapture ?: return
-//        val photoFile = File(
-//            outputDirectory,
-//            SimpleDateFormat(Constants.FILE_NAME_FORMAT,
-//                Locale.getDefault())
-//                .format(System.currentTimeMillis()) + ".jpg")
-//
-//        val outputOption = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-//
-//        imageCapture.takePicture(
-//            outputOption, ContextCompat.getMainExecutor(this),
-//            object :ImageCapture.OnImageSavedCallback{
-//                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-//                    val savedUri = Uri.fromFile(photoFile)
-//                    val msg = "Photo Saved"
-//
-//                    Toast.makeText(
-//                        this@MainActivity,
-//                        "$msg $savedUri",
-//                        Toast.LENGTH_LONG
-//                    ).show()
-//                }
-//
-//                override fun onError(exception: ImageCaptureException) {
-//                    Log.e(Constants.TAG,"onError: ${exception.message}", exception)
-//                }
-//
-//            }
-//        )
         imageCapture.takePicture(
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageCapturedCallback() {
@@ -167,25 +145,6 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
         cameraExecutor.shutdown()
     }
 
-    fun Image.toBitmap(): Bitmap {
-        val yBuffer = planes[0].buffer // Y
-        val vuBuffer = planes[2].buffer // VU
-
-        val ySize = yBuffer.remaining()
-        val vuSize = vuBuffer.remaining()
-
-        val nv21 = ByteArray(ySize + vuSize)
-
-        yBuffer.get(nv21, 0, ySize)
-        vuBuffer.get(nv21, ySize, vuSize)
-
-        val yuvImage = YuvImage(nv21, ImageFormat.NV21, this.width, this.height, null)
-        val out = ByteArrayOutputStream()
-        yuvImage.compressToJpeg(Rect(0, 0, yuvImage.width, yuvImage.height), 50, out)
-        val imageBytes = out.toByteArray()
-        return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-    }
-
     override fun analyze(imageproxy: ImageProxy) {
         val mediaImage = imageproxy.image
         if (mediaImage != null) {
@@ -205,14 +164,11 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
                     if(faces.size == 0)
                     {
                         Toast.makeText(this,
-                            "nie ma rocka :(",
+                            "Nie wykryto twarzy!",
                             Toast.LENGTH_SHORT).show()
                     }
-                    val bitmap_img = mediaImage.toBitmap()
+                    val bitmap_img = image.bitmapInternal!!//mediaImage.toBitmap()
                     for (face in faces) {
-                        Toast.makeText(this,
-                            "WYKRYTO ROCKA!!",
-                            Toast.LENGTH_SHORT).show()
                         val bounds = face.boundingBox
 
                         val x = Math.max(bounds.left, 0)
@@ -220,8 +176,7 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
 
                         val width = bounds.width()
                         val height = bounds.height()
-//                        val rotY = face.headEulerAngleY // Head is rotated to the right rotY degrees
-//                        val rotZ = face.headEulerAngleZ // Head is tilted sideways rotZ degrees
+
                         bounds.set(
                             bounds.left,
                             bounds.top,
@@ -237,11 +192,14 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
                             if(y + width > bitmap_img.height) bitmap_img.height - x else height
                         )
 
-                        intent.putExtra("bitmap", crop)
+                        val stream = ByteArrayOutputStream()
+                        crop.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                        val byteArray = stream.toByteArray()
+
+                        val intent = Intent(this, PreviewActivity::class.java)
+                        intent.putExtra("image", byteArray)
 
                         startActivity(intent)
-
-
 
                     }
                 }

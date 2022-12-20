@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".preview_activity">
+    android:background="#9E3E3E"
+    tools:context=".PreviewActivity">
 
     <ImageView
         android:id="@+id/imageView"

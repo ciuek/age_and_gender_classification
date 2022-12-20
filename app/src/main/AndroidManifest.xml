@@ -17,7 +17,7 @@
         android:theme="@style/Theme.Age_and_gender_classification"
         tools:targetApi="31">
         <activity
-            android:name=".preview_activity"
+            android:name=".PreviewActivity"
             android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
