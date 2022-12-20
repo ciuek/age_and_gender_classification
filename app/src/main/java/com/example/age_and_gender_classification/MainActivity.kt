@@ -25,7 +25,7 @@ import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlin.coroutines.jvm.internal.CompletedContinuation.context
+//import kotlin.coroutines.jvm.internal.CompletedContinuation.context
 
 
 class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {

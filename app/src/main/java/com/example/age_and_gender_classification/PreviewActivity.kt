@@ -1,71 +1,71 @@
 package com.example.age_and_gender_classification
 
 import android.annotation.SuppressLint
-import android.content.res.AssetManager
 import android.graphics.*
-import android.media.Image
 import android.os.Bundle
-import android.os.Parcelable
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.google.mlkit.common.model.LocalModel
-import java.io.ByteArrayOutputStream
-import java.io.FileInputStream
-import java.io.IOException
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
+import com.example.age_and_gender_classification.ml.AgeModel
+import org.tensorflow.lite.DataType
+import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 
 class PreviewActivity : AppCompatActivity() {
 
-    private val MODEL_INPUT_SIZE = 64
+    private val MODEL_INPUT_SIZE = 200
     private val BATCH_SIZE = 128
+    private lateinit var resultFieldAge : TextView
 
+    @SuppressLint("WrongThread")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_preview)
         val view = findViewById<ImageView>(R.id.imageView)
+        resultFieldAge = findViewById(R.id.result_age);
 
         val byteArray = intent.getByteArrayExtra("image")
-        val bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray!!.size)
+        val bmp = Bitmap.createScaledBitmap(BitmapFactory.decodeByteArray(byteArray, 0, byteArray!!.size), 200, 200, false)
+        setContentView(R.layout.activity_main);
+
+        val model = AgeModel.newInstance(this)
+
+//        val stream = ByteArrayOutputStream()
+//        bmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
+//        val array = stream.toByteArray()
+
+        val inputFeature0 = TensorBuffer.createFixedSize(intArrayOf(1, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, 3), DataType.FLOAT32)
+        val byteBuffer = ByteBuffer.allocateDirect(4 * MODEL_INPUT_SIZE * MODEL_INPUT_SIZE * 3)
+        byteBuffer.order(ByteOrder.nativeOrder())
+
+        val intValues = IntArray(MODEL_INPUT_SIZE * MODEL_INPUT_SIZE)
+        bmp.getPixels(intValues, 0, bmp.width, 0, 0, bmp.width, bmp.height)
+        var pixel = 0
+
+        for (i in 0 until MODEL_INPUT_SIZE)
+        {
+            for(j in 0 until MODEL_INPUT_SIZE)
+            {
+                val pixelValue = intValues[pixel++]
+                byteBuffer.putFloat((pixelValue shr 16 and 0xFF) / 255f)
+                byteBuffer.putFloat((pixelValue shr 8 and 0xFF) / 255f)
+                byteBuffer.putFloat((pixelValue and 0xFF) / 255f)
+            }
+        }
+
+        inputFeature0.loadBuffer(byteBuffer)
+
+        val outputs = model.process(inputFeature0)
+        val outputFeature0 = outputs.outputFeature0AsTensorBuffer
+
+       // resultFieldAge.setText(R.string.outputFeature0);
+
+        model.close()
+
 
         view.setImageBitmap(bmp)
     }
 
-//
-//    @Throws(IOException::class)
-//    private fun getModelByteBuffer(assetManager: AssetManager, modelPath: String): MappedByteBuffer {
-//        val fileDescriptor = assetManager.openFd(modelPath)
-//        val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
-//        val fileChannel = inputStream.channel
-//        val startOffset = fileDescriptor.startOffset
-//        val declaredLength = fileDescriptor.declaredLength
-//        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
-//    }
-//
-    fun recognize(bitmap: Bitmap): Float{
-        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, false)
-        val pixelValues = IntArray(MODEL_INPUT_SIZE * MODEL_INPUT_SIZE)
-        scaledBitmap.getPixels(pixelValues, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-
-
-        return
-    }
-
-    private fun loadModelFile(assetManager: AssetManager, modelPath: String): MappedByteBuffer {
-        val fileDescriptor = assetManager.openFd(modelPath)
-        val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
-        val fileChannel = inputStream.channel
-        val startOffset = fileDescriptor.startOffset
-        val declaredLength = fileDescriptor.declaredLength
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
-    }
-
-    private fun doInference(inputString: String): Float {
-        val inputVal = FloatArray(1)
-        inputVal[0] = inputString.toFloat()
-        val output = Array(1) { FloatArray(1) }
-        interpreter.run(inputVal, output)
-        return output[0][0]
-    }
 }
