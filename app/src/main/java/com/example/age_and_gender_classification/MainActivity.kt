@@ -161,46 +161,54 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
 
             val result = detector.process(image)
                 .addOnSuccessListener { faces ->
-                    if(faces.size == 0)
+                    when(faces.size)
                     {
-                        Toast.makeText(this,
-                            "Nie wykryto twarzy!",
+                        0 -> {
+                            Toast.makeText(this,
+                                "Nie wykryto twarzy!",
                             Toast.LENGTH_SHORT).show()
-                    }
-                    val bitmap_img = image.bitmapInternal!!//mediaImage.toBitmap()
-                    for (face in faces) {
-                        val bounds = face.boundingBox
+                        }
 
-                        val x = Math.max(bounds.left, 0)
-                        val y = Math.max(bounds.top, 0)
+                        1 -> {
+                            val bitmap_img = image.bitmapInternal!!//mediaImage.toBitmap()
+                            val face = faces[0]
+                            val bounds = face.boundingBox
 
-                        val width = bounds.width()
-                        val height = bounds.height()
+                            val x = Math.max(bounds.left, 0)
+                            val y = Math.max(bounds.top, 0)
 
-                        bounds.set(
-                            bounds.left,
-                            bounds.top,
-                            bounds.right,
-                            bounds.bottom
-                        )
+                            val width = bounds.width()
+                            val height = bounds.height()
 
-                        val crop = Bitmap.createBitmap(
-                            bitmap_img,
-                            x,
-                            y,
-                            if(x + width > bitmap_img.width) bitmap_img.width - x else width,
-                            if(y + width > bitmap_img.height) bitmap_img.height - x else height
-                        )
+                            bounds.set(
+                                bounds.left,
+                                bounds.top,
+                                bounds.right,
+                                bounds.bottom
+                            )
 
-                        val stream = ByteArrayOutputStream()
-                        crop.compress(Bitmap.CompressFormat.PNG, 100, stream)
-                        val byteArray = stream.toByteArray()
+                            val crop = Bitmap.createBitmap(
+                                bitmap_img,
+                                x,
+                                y,
+                                if(x + width > bitmap_img.width) bitmap_img.width - x else width,
+                                if(y + width > bitmap_img.height) bitmap_img.height - x else height
+                            )
 
-                        val intent = Intent(this, PreviewActivity::class.java)
-                        intent.putExtra("image", byteArray)
+                            val stream = ByteArrayOutputStream()
+                            crop.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                            val byteArray = stream.toByteArray()
 
-                        startActivity(intent)
+                            val intent = Intent(this, PreviewActivity::class.java)
+                            intent.putExtra("image", byteArray)
 
+                            startActivity(intent)
+
+                        }
+                        else ->
+                            Toast.makeText(this,
+                                "Wykryto więcej niż jedną twarz!",
+                                Toast.LENGTH_SHORT).show()
                     }
                 }
                 .addOnFailureListener { e ->

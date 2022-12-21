@@ -7,6 +7,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.age_and_gender_classification.ml.AgeModel
+import com.example.age_and_gender_classification.ml.ModelNew
+import com.example.age_and_gender_classification.ml.ModelNewest
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.nio.ByteBuffer
@@ -15,7 +17,7 @@ import java.nio.ByteOrder
 
 class PreviewActivity : AppCompatActivity() {
 
-    private val MODEL_INPUT_SIZE = 200
+    private val MODEL_INPUT_SIZE = 64
     private val BATCH_SIZE = 128
     private lateinit var resultFieldAge : TextView
 
@@ -27,10 +29,16 @@ class PreviewActivity : AppCompatActivity() {
         resultFieldAge = findViewById(R.id.result_age);
 
         val byteArray = intent.getByteArrayExtra("image")
-        val bmp = Bitmap.createScaledBitmap(BitmapFactory.decodeByteArray(byteArray, 0, byteArray!!.size), 200, 200, false)
-        setContentView(R.layout.activity_main);
+        val bmp = Bitmap.createScaledBitmap(BitmapFactory.decodeByteArray(byteArray, 0, byteArray!!.size), MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, false)
 
-        val model = AgeModel.newInstance(this)
+        predict_age(bmp)
+
+        view.setImageBitmap(BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size))
+    }
+
+    private fun predict_age(bmp: Bitmap) {
+
+        val model = ModelNewest.newInstance(this)
 
 //        val stream = ByteArrayOutputStream()
 //        bmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
@@ -58,14 +66,12 @@ class PreviewActivity : AppCompatActivity() {
         inputFeature0.loadBuffer(byteBuffer)
 
         val outputs = model.process(inputFeature0)
-        val outputFeature0 = outputs.outputFeature0AsTensorBuffer
+        val outputFeature0 = outputs.outputFeature0AsTensorBuffer.floatArray
 
-       // resultFieldAge.setText(R.string.outputFeature0);
+        resultFieldAge.text = outputFeature0[0].toString()
 
         model.close()
 
-
-        view.setImageBitmap(bmp)
     }
 
 }
