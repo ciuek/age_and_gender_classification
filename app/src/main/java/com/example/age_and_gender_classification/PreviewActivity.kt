@@ -54,9 +54,9 @@ class PreviewActivity : AppCompatActivity() {
             for(j in 0 until MODEL_INPUT_SIZE)
             {
                 val pixelValue = intValues[pixel++]
-                byteBuffer.putFloat((pixelValue shr 16 and 0xFF) / 255f)
-                byteBuffer.putFloat((pixelValue shr 8 and 0xFF) / 255f)
-                byteBuffer.putFloat((pixelValue and 0xFF) / 255f)
+                byteBuffer.putFloat((pixelValue shr 16 and 0xFF) / 1f)
+                byteBuffer.putFloat((pixelValue shr 8 and 0xFF) / 1f)
+                byteBuffer.putFloat((pixelValue and 0xFF) / 1f)
             }
         }
 
