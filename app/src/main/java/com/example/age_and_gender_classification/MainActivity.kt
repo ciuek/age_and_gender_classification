@@ -6,6 +6,7 @@ import android.content.res.AssetManager
 import android.graphics.*
 import android.media.Image
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -63,7 +64,8 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
     private fun choosephoto() {
         val image: InputImage
         try {
-         //   image = InputImage.fromFilePath(context, uri)
+            val pickIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            startActivityForResult(pickIntent, 1)
         } catch (e: IOException) {
             e.printStackTrace()
         }
@@ -216,5 +218,9 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
                 }
 
         }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
     }
 }

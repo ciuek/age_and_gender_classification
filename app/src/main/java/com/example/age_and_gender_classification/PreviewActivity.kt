@@ -6,9 +6,7 @@ import android.os.Bundle
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.example.age_and_gender_classification.ml.AgeModel
-import com.example.age_and_gender_classification.ml.ModelNew
-import com.example.age_and_gender_classification.ml.ModelNewest
+import com.example.age_and_gender_classification.ml.*
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.nio.ByteBuffer
@@ -37,8 +35,7 @@ class PreviewActivity : AppCompatActivity() {
     }
 
     private fun predict_age(bmp: Bitmap) {
-
-        val model = ModelNewest.newInstance(this)
+        val model = AutoModel11ImdbNewestfin.newInstance(this)
 
 //        val stream = ByteArrayOutputStream()
 //        bmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
