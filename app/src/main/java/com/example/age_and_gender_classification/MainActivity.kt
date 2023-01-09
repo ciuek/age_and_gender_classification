@@ -1,12 +1,14 @@
 package com.example.age_and_gender_classification
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.AssetManager
 import android.graphics.*
-import android.media.Image
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -18,14 +20,12 @@ import com.example.age_and_gender_classification.databinding.ActivityMainBinding
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection.getClient
 import com.google.mlkit.vision.face.FaceDetectorOptions
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileInputStream
-import java.io.IOException
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
+import java.io.*
+import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+
+
 //import kotlin.coroutines.jvm.internal.CompletedContinuation.context
 
 
@@ -43,6 +43,13 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
+        if (Build.VERSION.SDK_INT >= 30) {
+            if (!Environment.isExternalStorageManager()) {
+                val getpermission = Intent()
+                getpermission.action = Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION
+                startActivity(getpermission)
+            }
+        }
 
         if(allPermissionGranted()) {
             startCamera()
@@ -147,6 +154,7 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
         cameraExecutor.shutdown()
     }
 
+    @SuppressLint("UnsafeOptInUsageError")
     override fun analyze(imageproxy: ImageProxy) {
         val mediaImage = imageproxy.image
         if (mediaImage != null) {
@@ -197,14 +205,26 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
                                 if(y + width > bitmap_img.height) bitmap_img.height - x else height
                             )
 
-                            val stream = ByteArrayOutputStream()
-                            crop.compress(Bitmap.CompressFormat.PNG, 100, stream)
-                            val byteArray = stream.toByteArray()
+//                            val stream = ByteArrayOutputStream()
+//                            crop.compress(Bitmap.CompressFormat.PNG, 100, stream)
+//                            val byteArray = stream.toByteArray()
 
                             val intent = Intent(this, PreviewActivity::class.java)
-                            intent.putExtra("image", byteArray)
+//                            intent.putExtra("image", byteArray)
+                            val name = "${UUID.randomUUID()}.jpg"
+                            val file = save_img(crop, name)
 
-                            startActivity(intent)
+                            if(file != null)
+                            {
+                                intent.putExtra("name", name)
+                                startActivity(intent)
+                            }
+                            else
+                            {
+                                Toast.makeText(this,
+                                "Nie można utworzyć pliku!",
+                                Toast.LENGTH_SHORT).show()
+                            }
 
                         }
                         else ->
@@ -218,6 +238,30 @@ class MainActivity : AppCompatActivity(), ImageAnalysis.Analyzer  {
                 }
 
         }
+    }
+
+    private fun save_img(img: Bitmap, name: String): File? {
+            //create a file to write bitmap data
+            var file: File? = null
+            return try {
+                file = File(Environment.getExternalStorageDirectory().toString() + File.separator + name)
+                file.createNewFile()
+
+                //Convert bitmap to byte array
+                val bos = ByteArrayOutputStream()
+                img.compress(Bitmap.CompressFormat.PNG, 100, bos) // YOU can also save it in JPEG
+                val bitmapdata = bos.toByteArray()
+
+                //write the bytes in file
+                val fos = FileOutputStream(file)
+                fos.write(bitmapdata)
+                fos.flush()
+                fos.close()
+                file
+            } catch (e: Exception) {
+                e.printStackTrace()
+                file // it will return null
+            }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

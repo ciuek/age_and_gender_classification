@@ -3,35 +3,40 @@ package com.example.age_and_gender_classification
 import android.annotation.SuppressLint
 import android.graphics.*
 import android.os.Bundle
+import android.os.Environment
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.age_and_gender_classification.ml.*
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
+import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlin.math.roundToInt
 
 
 class PreviewActivity : AppCompatActivity() {
 
     private val MODEL_INPUT_SIZE = 64
-    private val BATCH_SIZE = 128
+    private val PREVIEW_SIZE = 512
     private lateinit var resultFieldAge : TextView
+    private lateinit var resultFieldGender : TextView
 
-    @SuppressLint("WrongThread")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_preview)
         val view = findViewById<ImageView>(R.id.imageView)
         resultFieldAge = findViewById(R.id.result_age);
+        resultFieldGender = findViewById(R.id.result_gender);
 
-        val byteArray = intent.getByteArrayExtra("image")
-        val bmp = Bitmap.createScaledBitmap(BitmapFactory.decodeByteArray(byteArray, 0, byteArray!!.size), MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, false)
+        val fileName = intent.getStringExtra("name")
 
-        predict_age(bmp)
+        val bmp = BitmapFactory.decodeFile(Environment.getExternalStorageDirectory().toString() + File.separator + fileName)
+        val scaledbmp = Bitmap.createScaledBitmap(bmp, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, false)
+        predict_age(scaledbmp)
 
-        view.setImageBitmap(BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size))
+        view.setImageBitmap(Bitmap.createScaledBitmap(bmp, PREVIEW_SIZE, PREVIEW_SIZE, false))
     }
 
     private fun predict_age(bmp: Bitmap) {
@@ -65,7 +70,7 @@ class PreviewActivity : AppCompatActivity() {
         val outputs = model.process(inputFeature0)
         val outputFeature0 = outputs.outputFeature0AsTensorBuffer.floatArray
 
-        resultFieldAge.text = outputFeature0[0].toString()
+        resultFieldAge.text = "Wiek: " + outputFeature0[0].toFloat().roundToInt() + " ± 6 lat"
 
         model.close()
 
