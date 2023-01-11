@@ -71,7 +71,7 @@ class PreviewActivity : AppCompatActivity() {
         val outputs = model.process(inputFeature0)
         val outputFeature0 = outputs.outputFeature0AsTensorBuffer.floatArray
 
-        resultFieldAge.text = "Wiek: " + outputFeature0[0].roundToInt() + " ± 6 lat"
+        resultFieldAge.text = "Wiek: " + outputFeature0[0].roundToInt() + " ± 7 lat"
 
         model.close()
 
